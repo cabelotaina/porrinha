@@ -1,13 +1,13 @@
 --[[
    Source: http://lua-users.org/wiki/OrderedTableSimple
-   
+
    LUA 5.1 compatible
-   
+
    Ordered Table
    keys added will be also be stored in a metatable to recall the insertion oder
    metakeys can be seen with for i,k in ( <this>:ipairs()  or ipairs( <this>._korder ) ) do
    ipairs( ) is a bit faster
-   
+
    variable names inside __index shouldn't be added, if so you must delete these again to access the metavariable
    or change the metavariable names, except for the 'del' command. thats the reason why one cannot change its value
 ]]--
@@ -53,7 +53,7 @@ function Ordered( t )
       if k ~= "del" and v then
          rawset( self,k,v )
          table.insert( self._korder, k )
-      end      
+      end
    end
    return setmetatable( t or {},mt )
 end
