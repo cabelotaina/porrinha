@@ -35,7 +35,7 @@ function Jogador:palpite(palpites, max_palitos_jogadores)
   -- https://periodicos.unifap.br/index.php/estacao/article/download/1322/paulov4n1.pdf
   -- Basicamente significa que um jogador pode jogar um valor médio e ter maiores chances de acertar.
 
-  print("Palitos jogados (self.palitos_jogados): " .. self.palitos_jogados)
+  --print("Palitos jogados (self.palitos_jogados): " .. self.palitos_jogados)
   local meu_palpite = 0
   local min_palitos_jogadores = Ordered()
   local total_max_palitos = 0
@@ -57,25 +57,35 @@ function Jogador:palpite(palpites, max_palitos_jogadores)
         min_palitos_jogadores[id] = 0
       end
     end
-    print("**********")
+    --print("**********")
 
     local total_min_palitos = 0
     for id, min_palitos in min_palitos_jogadores:opairs() do
       total_min_palitos = total_min_palitos + min_palitos
     end
     total_min_palitos = total_min_palitos + self.palitos_jogados
-    print("total_min_palitos = " .. total_min_palitos)
-    print("total_max_palitos = " .. total_max_palitos)
+    --print("total_min_palitos = " .. total_min_palitos)
+    --print("total_max_palitos = " .. total_max_palitos)
 
-    -- Faz o jogador dar um palpite que ninguém tenha dado ainda
-    local palpite_distinto = false
-
-    if total_min_palitos < (total_max_palitos/3) then
-      total_min_palitos = math.ceil(total_min_palitos + total_max_palitos/#max_palitos_jogadores)
-      total_max_palitos = math.ceil(total_max_palitos - total_max_palitos/#max_palitos_jogadores)
+    -- Estratégia para aproximar o palpite do valor médio esperado, conforme a distribuição normal
+    if total_min_palitos == 0 then
+      -- Se não conseguiu um valor mínimo baseado nos palpites dos outros jogadores, o valor deve ser perto da média
+      total_min_palitos = math.ceil(total_min_palitos + total_max_palitos/#max_palitos_jogadores + 1)
+      total_max_palitos = math.floor(total_max_palitos - total_max_palitos/#max_palitos_jogadores - 1)
+    else
+      -- Mas se o valor mínimo não é zero, então talvez ele já esteja perto da média, por isso incrementa apenas
+      -- 1 unidade se o valor for alto, e incrementa mais se o valor for baixo. Também reduz o valor máximo baseado
+      -- no valor médio de palitos que cada jogador possui.
+      local incremento = 1
+      if total_min_palitos < total_max_palitos/#max_palitos_jogadores then
+        incremento = total_max_palitos/#max_palitos_jogadores
+      end
+      total_min_palitos = math.ceil(total_min_palitos + incremento)
+      total_max_palitos = math.floor(total_max_palitos - total_max_palitos/#max_palitos_jogadores)
     end
-    print("total_min_palitos (new) = " .. total_min_palitos)
-    print("total_max_palitos (new) = " .. total_max_palitos)
+
+    --print("total_min_palitos (new) = " .. total_min_palitos)
+    --print("total_max_palitos (new) = " .. total_max_palitos)
 
     meu_palpite = calcValorDistinto(total_min_palitos, total_max_palitos, palpites)
   end
@@ -87,6 +97,7 @@ function Jogador:decPalitos()
   self.palitos = self.palitos - 1
 end
 
+-- Faz o jogador dar um palpite que ninguém tenha dado ainda
 function calcValorDistinto(min, max, palpites)
   local meu_palpite = 0
   local palpite_distinto = false

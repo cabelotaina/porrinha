@@ -14,11 +14,14 @@ local jogadores = nil
 local palitos_max = 3
 local palitos_humano = 0
 local palpite_humano = 0
+local jogador_venceu = {}
+local partida = 0
 
 local background = display.newImageRect ("background.png", 1200, 800)
 background.x = display.contentCenterX
 background.y = display.contentCenterY
 
+local ui_nova_partida = nil
 local ui_distancia = 220
 local ui_label = {}
 local ui_jogador_img = {}
@@ -123,6 +126,9 @@ end
 
 function inicializarUi()
   for id = 1, n_jogadores do
+    -- Inicializa a quantidade de partidas vencidas por cada jogador
+    jogador_venceu[id] = 0
+
     local imagem = "hand.png"
     local cor_vermelho = 0
     if jogador_humano and id == 1 then
@@ -280,6 +286,9 @@ function resetUi()
     ui_palitos_jogados[id]:setFillColor(cor_vermelho, 0, 0)
     ui_palpite[id]:setFillColor(cor_vermelho, 0, 0)
   end
+
+  -- Desabilita o botão de nova partida para não ocorrerem erros se alguém clicar no meio de uma partida
+  ui_nova_partida:setEnabled(false)
 end
 
 inicializarUi()
@@ -287,7 +296,8 @@ atualizarControlesHumanos()
 
 function novaPartida(event)
   if "ended" == event.phase then
-    print("Iniciando nova partida")
+    partida = partida + 1
+    print("Iniciando nova partida #" .. partida)
     resetUi()
     local palitos_jogados = {}
     jogadores = {}
@@ -329,7 +339,7 @@ function novaPartida(event)
       rodadas = rodadas + 1
       ganhador = 0
 
-      print("Primeiro a jogar: Jogador " .. primeiro_jogador)
+      --print("Primeiro a jogar: Jogador " .. primeiro_jogador)
 
       -- Os jogadores selecionam seus palitos e fazem suas apostas (palpites)
       -- Os dois for's simulam uma lista circular que inicia no primeiro_jogador da rodada
@@ -341,8 +351,8 @@ function novaPartida(event)
           palitos_jogados[i] = jogadores[i]:jogar()
           palpites[i] = jogadores[i]:palpite(palpites, getMaxPalitosJogadores())
         end
-        print("Palitos jogados: " .. palitos_jogados[i])
-        print("Palpite: " .. palpites[i])
+        --print("Palitos jogados: " .. palitos_jogados[i])
+        --print("Palpite: " .. palpites[i])
         total_palitos = total_palitos + palitos_jogados[i]
       end
       for i = 1, primeiro_jogador do
@@ -353,11 +363,11 @@ function novaPartida(event)
           palitos_jogados[i] = jogadores[i]:jogar()
           palpites[i] = jogadores[i]:palpite(palpites, getMaxPalitosJogadores())
         end
-        print("Palitos jogados: " .. palitos_jogados[i])
-        print("Palpite: " .. palpites[i])
+        --print("Palitos jogados: " .. palitos_jogados[i])
+        --print("Palpite: " .. palpites[i])
         total_palitos = total_palitos + palitos_jogados[i]
       end
-      print("----------------------------")
+      --print("----------------------------")
 
       -- Verifica se algum jogador acertou a quantidade total de palitos
       for i = 1, n_jogadores do
@@ -377,17 +387,24 @@ function novaPartida(event)
 
       updateUi()
 
-      print("Total palitos: " .. total_palitos)
-
       -- Verifica se algum jogador venceu o jogo
-      for i = 1, n_jogadores do
-        local palitos = jogadores[i]:getPalitos()
+      for id = 1, n_jogadores do
+        local palitos = jogadores[id]:getPalitos()
         if palitos == 0 then
           updateUi()
-          ui_resultado.text = "O Jogador " .. i .. " ganhou"
+          ui_resultado.text = "O Jogador " .. id .. " ganhou"
           ui_resultado:setFillColor(1, 0, 0)
-          ganhador = i
+          ganhador = id
           timer.cancel(rodadaTimer)
+          print("---------- Resumo das partidas ----------")
+          jogador_venceu[id] = jogador_venceu[id] + 1
+          for i = 1, #jogador_venceu do
+            print("O Jogador " .. i .. " venceu: " .. jogador_venceu[i] .. " partidas até agora")
+          end
+          print("-----------------------------------------")
+
+          -- Reabilita o botão de nova partida
+          ui_nova_partida:setEnabled(true)
         end
       end
 
@@ -411,9 +428,8 @@ function novaPartida(event)
   end
 end
 
-
 -- Botão que inicia uma nova partida
-local ui_nova_partida = widget.newButton(
+ui_nova_partida = widget.newButton(
     {
         left = 730,
         top = 550,
